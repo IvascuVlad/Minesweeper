@@ -1,8 +1,11 @@
 import pygame
+import time
 
 window_width = 400
 window_height = 500
 number_of_blocks = 9
+number_of_bombs = 7
+game_over_flag = False
 
 hidden_matrix = []
 visible_matrix = []
@@ -68,6 +71,8 @@ three = pygame.image.load("REALE/3.png")
 four = pygame.image.load("REALE/4.png")
 five = pygame.image.load("REALE/5.png")
 bomb = pygame.image.load("bomb.png")
+flag = pygame.image.load("flag.png")
+question_mark = pygame.image.load("question.png")
 
 def drawGrid():
     top_left = (10, (window_height - window_width) + 10)
@@ -81,9 +86,11 @@ def drawGrid():
     bomb_trap = pygame.transform.scale(bomb, (blockSize,blockSize))
     for x in range(number_of_blocks):
         for y in range(number_of_blocks):
-            rect = pygame.Rect(x*blockSize + top_left[0], y*blockSize + top_left[1],
-                               blockSize, blockSize)
-            pygame.draw.rect(window, (117,117,117), rect, 2)
+            rect = pygame.Rect(x*blockSize + top_left[0], y*blockSize + top_left[1],blockSize, blockSize)
+            if hidden_matrix[x][y] == "B":
+                pygame.draw.rect(window, (255, 0, 0), rect)
+            else:
+                pygame.draw.rect(window, (117,117,117), rect, 2)
             if isinstance(hidden_matrix[x][y],int):
                 if hidden_matrix[x][y] == 1:
                     window.blit(number_one, (x * blockSize + top_left[0], y * blockSize + top_left[1]))
@@ -124,12 +131,21 @@ def drawBoxesInit():
     top_right = (window_width - 10, (window_height - window_width) + 10)
     blockSize = int((top_right[0] - top_left[0]) / number_of_blocks)
     block = pygame.transform.scale(full_square, (blockSize,blockSize))
+    flag_for_bomb = pygame.transform.scale(flag, (blockSize,blockSize))
+    question_for_bomb = pygame.transform.scale(question_mark, (blockSize,blockSize))
     for x in range(number_of_blocks):
         for y in range(number_of_blocks):
-            if visible_matrix[x][y] == None:
+            if visible_matrix[x][y] == "F":
+                window.blit(block, (x*blockSize + top_left[0], y*blockSize + top_left[1]))
+                window.blit(flag_for_bomb, (x * blockSize + top_left[0], y * blockSize + top_left[1]))
+            elif visible_matrix[x][y] == "?":
+                window.blit(block, (x * blockSize + top_left[0], y * blockSize + top_left[1]))
+                window.blit(question_for_bomb, (x * blockSize + top_left[0], y * blockSize + top_left[1]))
+            elif visible_matrix[x][y] != "D":
                 window.blit(block, (x*blockSize + top_left[0], y*blockSize + top_left[1]))
 
 def process_click(position, button):
+    global game_over_flag
     top_left = (10, (window_height - window_width) + 10)
     top_right = (window_width - 10, (window_height - window_width) + 10)
     blockSize = int((top_right[0] - top_left[0]) / number_of_blocks)
@@ -142,6 +158,14 @@ def process_click(position, button):
             visible_matrix[x_position][y_position] = "D"
         else:
             print("AI PIERDUT")
+            game_over_flag = True
+    if button == 3:
+        if visible_matrix[x_position][y_position] == None:
+            visible_matrix[x_position][y_position] = "F"
+        elif visible_matrix[x_position][y_position] == "F":
+            visible_matrix[x_position][y_position] = "?"
+        elif visible_matrix[x_position][y_position] == "?":
+            visible_matrix[x_position][y_position] = None
 
 def find_empty_neighbours(x, y):
     nextx = [-1, -1, -1, 0, 0, 1, 1, 1]
@@ -154,6 +178,27 @@ def find_empty_neighbours(x, y):
                     visible_matrix[x + nextx[i]][y + nexty[i]] = "D"
             find_empty_neighbours(x + nextx[i], y + nexty[i])
 
+def game_over():
+    if game_over_flag:
+        reveal_all_bombs()
+        return True
+    number_of_correct_flags = 0
+    for i in range(number_of_blocks):
+        for j in range(number_of_blocks):
+            if hidden_matrix[i][j] != "B" and visible_matrix[i][j] == "D":
+                number_of_correct_flags += 1
+    if number_of_correct_flags == number_of_blocks*number_of_blocks - number_of_bombs:
+        print("AI CASTIGAT")
+        return True
+    else:
+        return False
+
+def reveal_all_bombs():
+    for i in range(number_of_blocks):
+        for j in range(number_of_blocks):
+            if hidden_matrix[i][j] == "B":
+                visible_matrix[i][j] = "D"
+
 running = True
 
 generate_matrix_game()
@@ -163,14 +208,13 @@ while running:
         if event.type == pygame.QUIT:
             running = False
         elif event.type == pygame.MOUSEBUTTONDOWN:
-            # MOUSEBUTTONDOWN events have a pos and a button attribute
-            # which you can use as well. This will be printed once per
-            # event / mouse click.
-            print('In the event loop:', event.pos, event.button)
-            process_click(event.pos, event.button)
+            if not game_over_flag:
+                process_click(event.pos, event.button)
 
     window.fill((192,192,192))
     draw_delimiters()
     drawGrid()
     drawBoxesInit()
+    game_over()
+    #print(int(pygame.time.get_ticks() / 1000 % 60))
     pygame.display.update()
