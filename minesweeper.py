@@ -1,9 +1,9 @@
 import pygame
-import time
 from random import randrange
 
-window_width = 400
-window_height = 500
+# Initializarea parametrilor globali
+window_width = 500
+window_height = 600
 number_of_blocks = 9
 number_of_bombs = 2
 game_over_flag = False
@@ -25,19 +25,23 @@ hidden_matrix = []
 visible_matrix = []
 
 def generate_matrix():
+    """
+    Functia construieste matricile hidden (folosita la backend-ul jocului) si visible (folosita la GUI)
+    """
     for i in range(number_of_blocks):
         aux_for_hidden = []
         aux_for_visible = []
         for j in range(number_of_blocks):
-            # if i == 1 and j == 1 or i == 1 and j == 2 or i == 3 and j == 3 or  i == 1 and j == 4 or i == 5 and j == 3 or i == 8 and j == 8 or i == 5 and j == 6:
-            #     aux_for_hidden.append("B")
-            # else:
             aux_for_hidden.append(0)
             aux_for_visible.append(None)
         hidden_matrix.append(aux_for_hidden)
         visible_matrix.append(aux_for_visible)
 
 def generate_matrix_game():
+    """
+    Functia va genera bombele in mod aleatoriu si va construi numarul de bombe vecine a fiecarei casute
+    :return:
+    """
     aux_for_number_of_bombs = 0
     while aux_for_number_of_bombs < number_of_bombs:
         x = randrange(0, number_of_blocks)
@@ -81,6 +85,9 @@ pygame.init()
 window = pygame.display.set_mode((window_width,window_height))
 
 pygame.display.set_caption("Minesweeper")
+
+# Se importa imaginile folosite la construirea jocului
+
 icon  = pygame.image.load("icon.png")
 pygame.display.set_icon(icon)
 full_square = pygame.image.load("REALE/t.png")
@@ -99,6 +106,9 @@ sad_face = pygame.image.load("sad.png")
 happy_face = pygame.image.load("happy.png")
 
 def drawGrid():
+    """
+    Functia deseneaza bombele si cifrele corespunzatoare din fiecare casuta
+    """
     top_left = (10, (window_height - window_width) + 10)
     top_right = (window_width - 10, (window_height - window_width) + 10)
     blockSize = int((top_right[0] - top_left[0]) / number_of_blocks)
@@ -130,6 +140,9 @@ def drawGrid():
                 window.blit(bomb_trap, (y * blockSize + top_left[0], x * blockSize + top_left[1]))
 
 def draw_delimiters():
+    """
+    Functia deseneaza liniile delimitatoare spatiului de joc si a spatiului de control
+    """
     top_left = (10, (window_height - window_width) + 10)
     top_right = (window_width - 10, (window_height - window_width) + 10)
     bottom_left = (10, window_height - 10)
@@ -151,6 +164,9 @@ def draw_delimiters():
     pygame.draw.line(window, black, (window_width - 10, 10), (window_width - 10, (window_height - window_width) - 10))  # linie sus control
 
 def drawBoxesInit():
+    """
+    Functia deseneaza patratelele, steagurile sau semnurile intrebarii ce acopera spatiul de joc.
+    """
     top_left = (10, (window_height - window_width) + 10)
     top_right = (window_width - 10, (window_height - window_width) + 10)
     blockSize = int((top_right[0] - top_left[0]) / number_of_blocks)
@@ -169,6 +185,13 @@ def drawBoxesInit():
                 window.blit(block, (y * blockSize + top_left[0], x * blockSize + top_left[1]))
 
 def process_click(event):
+    """
+    Functia proceseaza evenimentele produse de mouse. Click stanga pe o patratica cu bomba va face ca jocul sa fie pierdut,
+    click stanga pe o patratica goala o va face sa dispara, click dreapta pe o patratica va schimba succesiv starea ei cu steag,
+    semnul intrebarii sau goala, click stanga pe fiecare casuta de input permite introducerea de text iar click stanga pe fata
+    zambitoare va restarta jocul.
+    :param event: Un eveniment format din coordonate si tip
+    """
     global game_over_flag
     global start_counting_flag
     global start_time_in_seconds
@@ -264,6 +287,10 @@ def process_click(event):
         input_number_of_seconds_flag = True
 
 def process_key(event):
+    """
+    Functia permite procesarea textului introdus in zona de control.
+    :param event: Un eveniment format din tasta, tip
+    """
     global input_number_of_blocks_text
     global input_number_of_blocks_flag
     global input_number_of_bombs_text
@@ -308,6 +335,12 @@ def process_key(event):
             input_number_of_seconds_text += event.unicode
 
 def find_empty_neighbours(x, y):
+    """
+    Functia cauta recursiv patratelele care sunt inca vizibile si ascund spatii goale facandu-le vizibile pana la granita formata
+    din spatii cu numere si extremitati
+    :param x: coordonata de start x
+    :param y: coordonata de start y
+    """
     nextx = [-1, -1, -1, 0, 0, 1, 1, 1]
     nexty = [-1, 0, 1, -1, 1, -1, 0, 1]
     if x >= 0 and x < number_of_blocks and y >= 0 and y < number_of_blocks and hidden_matrix[x][y] == 0 and visible_matrix[x][y] == None:
@@ -319,6 +352,10 @@ def find_empty_neighbours(x, y):
             find_empty_neighbours(x + nextx[i], y + nexty[i])
 
 def game_over():
+    """
+    Functia verifica daca toate patratelele care nu ascund bombe au fost parcurse de jucator. Daca contitia este indeplinita
+    jocul va lua sfarsit. Daca jocul este terminat fie castigat fie pierdut se vor arata toate bombele si se opreste cronometrul
+    """
     global game_over_flag
     global start_counting_flag
     if game_over_flag:
@@ -339,12 +376,18 @@ def game_over():
         return False
 
 def reveal_all_bombs():
+    """
+    Functia parcurge toate patratelele sub care se afla bombe si le elimina
+    """
     for i in range(number_of_blocks):
         for j in range(number_of_blocks):
             if hidden_matrix[i][j] == "B":
                 visible_matrix[i][j] = "D"
 
 def draw_control_panel():
+    """
+    Functia deseneaza spatiul de control format din casutele de input si de fata zambitoare
+    """
     global input_number_of_blocks_text
     global input_number_of_bombs_text
     global input_number_of_minutes_text
@@ -384,6 +427,9 @@ def draw_control_panel():
     pygame.draw.rect(window, (0, 0, 0), input_number_of_seconds, 2)
 
 def draw_time():
+    """
+    Functia deseneza cronometrul in spatiul de control
+    """
     global start_time_in_seconds
     global desired_time_in_seconds
     control_panel_x_coordinate = (10, window_width - 10)
@@ -411,6 +457,9 @@ def draw_time():
     window.blit(font.render(text, True, (0, 0, 0)), (game_reset_x_coordinate + 50, game_reset_y_coordinate - 10))
 
 def reset_game():
+    """
+    Functia reseteaza jocul pastrand setarile jocului anterior
+    """
     global hidden_matrix
     global visible_matrix
     global number_of_blocks
@@ -445,13 +494,13 @@ def reset_game():
     game_over_flag = False
     start_time_in_seconds = 0
     start_counting_flag = False
-    #input_number_of_blocks_text = "blocks"
+    input_number_of_blocks_text = "blocks"
     input_number_of_blocks_flag = False
-    #input_number_of_minutes_text = "minutes"
+    input_number_of_minutes_text = "minutes"
     input_number_of_minutes_flag = False
-    #input_number_of_bombs_text = "bombs"
+    input_number_of_bombs_text = "bombs"
     input_number_of_bombs_flag = False
-    #input_number_of_seconds_text = "seconds"
+    input_number_of_seconds_text = "seconds"
     input_number_of_seconds_flag = False
     lose_flag = False
 
@@ -462,6 +511,7 @@ generate_matrix()
 generate_matrix_game()
 
 while running:
+    # Bucla pana cand butonul de exit este apasat unde jocul este construit
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
