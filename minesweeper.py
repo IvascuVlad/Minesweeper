@@ -1,9 +1,10 @@
+__doc__ = "Jocul Minesweeper realizat in Python"
 import pygame
 from random import randrange
 
 # Initializarea parametrilor globali
 window_width = 500
-window_height = 600
+window_height = window_width + 100
 number_of_blocks = 9
 number_of_bombs = 2
 game_over_flag = False
@@ -40,7 +41,6 @@ def generate_matrix():
 def generate_matrix_game():
     """
     Functia va genera bombele in mod aleatoriu si va construi numarul de bombe vecine a fiecarei casute
-    :return:
     """
     aux_for_number_of_bombs = 0
     while aux_for_number_of_bombs < number_of_bombs:
@@ -88,27 +88,29 @@ pygame.display.set_caption("Minesweeper")
 
 # Se importa imaginile folosite la construirea jocului
 
-icon  = pygame.image.load("icon.png")
+icon  = pygame.image.load("Images/icon.png")
 pygame.display.set_icon(icon)
-full_square = pygame.image.load("REALE/t.png")
-empty_square = pygame.image.load("empty_square.png")
-empty_square = pygame.transform.scale(empty_square, (17,17))
-one = pygame.image.load("REALE/1.png")
-two = pygame.image.load("REALE/2.png")
-three = pygame.image.load("REALE/3.png")
-four = pygame.image.load("REALE/4.png")
-five = pygame.image.load("REALE/5.png")
-bomb = pygame.image.load("bomb.png")
-flag = pygame.image.load("flag.png")
-question_mark = pygame.image.load("question.png")
-smiley_face = pygame.image.load("win_and_happy.png")
-sad_face = pygame.image.load("sad.png")
-happy_face = pygame.image.load("happy.png")
+full_square = pygame.image.load("Images/t.png")
+one = pygame.image.load("Images/1.png")
+two = pygame.image.load("Images/2.png")
+three = pygame.image.load("Images/3.png")
+four = pygame.image.load("Images/4.png")
+five = pygame.image.load("Images/5.png")
+six = pygame.image.load("Images/6.svg")
+seven = pygame.image.load("Images/7.svg")
+eight = pygame.image.load("Images/8.svg")
+bomb = pygame.image.load("Images/bomb.png")
+flag = pygame.image.load("Images/flag.png")
+question_mark = pygame.image.load("Images/question.png")
+smiley_face = pygame.image.load("Images/win_and_happy.png")
+sad_face = pygame.image.load("Images/sad.png")
+happy_face = pygame.image.load("Images/happy.png")
 
 def drawGrid():
     """
     Functia deseneaza bombele si cifrele corespunzatoare din fiecare casuta
     """
+    global lose_flag
     top_left = (10, (window_height - window_width) + 10)
     top_right = (window_width - 10, (window_height - window_width) + 10)
     blockSize = int((top_right[0] - top_left[0]) / number_of_blocks)
@@ -117,12 +119,16 @@ def drawGrid():
     number_three = pygame.transform.scale(three, (blockSize,blockSize))
     number_four = pygame.transform.scale(four, (blockSize, blockSize))
     number_five = pygame.transform.scale(five, (blockSize, blockSize))
+    number_six = pygame.transform.scale(six, (blockSize, blockSize))
+    number_seven = pygame.transform.scale(seven, (blockSize, blockSize))
+    number_eight = pygame.transform.scale(eight, (blockSize, blockSize))
     bomb_trap = pygame.transform.scale(bomb, (blockSize,blockSize))
     for x in range(number_of_blocks):
         for y in range(number_of_blocks):
             rect = pygame.Rect(y*blockSize + top_left[0], x*blockSize + top_left[1],blockSize, blockSize)
             if hidden_matrix[x][y] == "B":
-                pygame.draw.rect(window, (255, 0, 0), rect)
+                if lose_flag:
+                    pygame.draw.rect(window, (255, 0, 0), rect)
             else:
                 pygame.draw.rect(window, (117,117,117), rect, 2)
             if isinstance(hidden_matrix[x][y],int):
@@ -136,6 +142,12 @@ def drawGrid():
                     window.blit(number_four, (y * blockSize + top_left[0], x * blockSize + top_left[1]))
                 elif hidden_matrix[x][y] == 5:
                     window.blit(number_five, (y * blockSize + top_left[0], x * blockSize + top_left[1]))
+                elif hidden_matrix[x][y] == 6:
+                    window.blit(number_six, (y * blockSize + top_left[0], x * blockSize + top_left[1]))
+                elif hidden_matrix[x][y] == 7:
+                    window.blit(number_seven, (y * blockSize + top_left[0], x * blockSize + top_left[1]))
+                elif hidden_matrix[x][y] == 8:
+                    window.blit(number_eight, (y * blockSize + top_left[0], x * blockSize + top_left[1]))
             if hidden_matrix[x][y] == "B":
                 window.blit(bomb_trap, (y * blockSize + top_left[0], x * blockSize + top_left[1]))
 
@@ -212,28 +224,29 @@ def process_click(event):
     x_position = int((event.pos[1] - top_left[1]) / blockSize)
     if not game_over_flag:
         if top_left[0] <= event.pos[0] and event.pos[0] <= bottom_right[0] and top_left[1] <= event.pos[1] and event.pos[1] <= bottom_right[1]:
-            if visible_matrix[x_position][y_position] == None and event.button == 1:
-                if hidden_matrix[x_position][y_position] != "B":
-                    if hidden_matrix[x_position][y_position] == 0:
-                        find_empty_neighbours(x_position, y_position)
-                    visible_matrix[x_position][y_position] = "D"
-                    if not start_counting_flag:
-                        start_time_in_seconds = int(pygame.time.get_ticks() / 1000)
-                    start_counting_flag = True
-                else:
-                    print("AI PIERDUT")
-                    lose_flag = True
-                    game_over_flag = True
-            if event.button == 3:
-                if visible_matrix[x_position][y_position] == None:
-                    if not start_counting_flag:
-                        start_time_in_seconds = int(pygame.time.get_ticks() / 1000)
-                    start_counting_flag = True
-                    visible_matrix[x_position][y_position] = "F"
-                elif visible_matrix[x_position][y_position] == "F":
-                    visible_matrix[x_position][y_position] = "?"
-                elif visible_matrix[x_position][y_position] == "?":
-                    visible_matrix[x_position][y_position] = None
+            if 0 <= x_position and x_position < number_of_blocks and 0 <= y_position and y_position < number_of_blocks:
+                if visible_matrix[x_position][y_position] == None and event.button == 1:
+                    if hidden_matrix[x_position][y_position] != "B":
+                        if hidden_matrix[x_position][y_position] == 0:
+                            find_empty_neighbours(x_position, y_position)
+                        visible_matrix[x_position][y_position] = "D"
+                        if not start_counting_flag:
+                            start_time_in_seconds = int(pygame.time.get_ticks() / 1000)
+                        start_counting_flag = True
+                    else:
+                        #print("AI PIERDUT")
+                        lose_flag = True
+                        game_over_flag = True
+                if event.button == 3:
+                    if visible_matrix[x_position][y_position] == None:
+                        if not start_counting_flag:
+                            start_time_in_seconds = int(pygame.time.get_ticks() / 1000)
+                        start_counting_flag = True
+                        visible_matrix[x_position][y_position] = "F"
+                    elif visible_matrix[x_position][y_position] == "F":
+                        visible_matrix[x_position][y_position] = "?"
+                    elif visible_matrix[x_position][y_position] == "?":
+                        visible_matrix[x_position][y_position] = None
     control_panel_x_coordinate = (10, window_width - 10)
     control_panel_y_coordinate = (10, window_height - window_width - 10)
     game_reset_x_coordinate = (control_panel_x_coordinate[1] - control_panel_x_coordinate[0]) / 2 - 10
@@ -246,7 +259,7 @@ def process_click(event):
     if event.button == 1 and input_number_of_blocks_coord[0] <= event.pos[0] and event.pos[0] <= \
             input_number_of_blocks_coord[2] and input_number_of_blocks_coord[1] <= event.pos[1] and event.pos[1] <= \
             input_number_of_blocks_coord[3]:
-        print("input_number_of_blocks")
+        #print("input_number_of_blocks")
         input_number_of_blocks_text = ""
         input_number_of_blocks_flag = True
         input_number_of_bombs_flag = False
@@ -257,7 +270,7 @@ def process_click(event):
     if event.button == 1 and input_number_of_bombs_coord[0] <= event.pos[0] and event.pos[0] <= \
             input_number_of_bombs_coord[2] and input_number_of_bombs_coord[1] <= event.pos[1] and event.pos[1] <= \
             input_number_of_bombs_coord[3]:
-        print("input_number_of_bombs")
+        #print("input_number_of_bombs")
         input_number_of_bombs_text = ""
         input_number_of_blocks_flag = False
         input_number_of_bombs_flag = True
@@ -268,7 +281,7 @@ def process_click(event):
     if event.button == 1 and input_number_of_minutes_coord[0] <= event.pos[0] and event.pos[0] <= \
             input_number_of_minutes_coord[2] and input_number_of_minutes_coord[1] <= event.pos[1] and event.pos[1] <= \
             input_number_of_minutes_coord[3]:
-        print("input_number_of_minutes")
+        #print("input_number_of_minutes")
         input_number_of_minutes_text = ""
         input_number_of_blocks_flag = False
         input_number_of_bombs_flag = False
@@ -279,7 +292,7 @@ def process_click(event):
     if event.button == 1 and input_number_of_seconds_coord[0] <= event.pos[0] and event.pos[0] <= \
             input_number_of_seconds_coord[2] and input_number_of_seconds_coord[1] <= event.pos[1] and event.pos[1] <= \
             input_number_of_seconds_coord[3]:
-        print("input_number_of_seconds")
+        #print("input_number_of_seconds")
         input_number_of_seconds_text = ""
         input_number_of_blocks_flag = False
         input_number_of_bombs_flag = False
@@ -304,7 +317,8 @@ def process_key(event):
     global desired_time_in_seconds
     if input_number_of_blocks_flag:
         if event.key == pygame.K_RETURN:
-            print(input_number_of_blocks_text)
+            #print(input_number_of_blocks_text)
+            input_number_of_blocks_flag = False
         elif event.key == pygame.K_BACKSPACE:
             input_number_of_blocks_text = input_number_of_blocks_text[:-1]
         else:
@@ -312,7 +326,8 @@ def process_key(event):
 
     if input_number_of_bombs_flag:
         if event.key == pygame.K_RETURN:
-            print(input_number_of_bombs_text)
+            #print(input_number_of_bombs_text)
+            input_number_of_bombs_flag = False
         elif event.key == pygame.K_BACKSPACE:
             input_number_of_bombs_text = input_number_of_bombs_text[:-1]
         else:
@@ -320,7 +335,8 @@ def process_key(event):
 
     if input_number_of_minutes_flag:
         if event.key == pygame.K_RETURN:
-            print(input_number_of_minutes_text)
+            #print(input_number_of_minutes_text)
+            input_number_of_minutes_flag = False
         elif event.key == pygame.K_BACKSPACE:
             input_number_of_minutes_text = input_number_of_minutes_text[:-1]
         else:
@@ -328,7 +344,8 @@ def process_key(event):
 
     if input_number_of_seconds_flag:
         if event.key == pygame.K_RETURN:
-            print(input_number_of_seconds_text)
+            #print(input_number_of_seconds_text)
+            input_number_of_seconds_flag = False
         elif event.key == pygame.K_BACKSPACE:
             input_number_of_seconds_text = input_number_of_seconds_text[:-1]
         else:
@@ -355,6 +372,7 @@ def game_over():
     """
     Functia verifica daca toate patratelele care nu ascund bombe au fost parcurse de jucator. Daca contitia este indeplinita
     jocul va lua sfarsit. Daca jocul este terminat fie castigat fie pierdut se vor arata toate bombele si se opreste cronometrul
+    :return: Returneaza True daca jocul este gata sau False in caz contrar
     """
     global game_over_flag
     global start_counting_flag
@@ -370,7 +388,7 @@ def game_over():
     if number_of_correct_flags == number_of_blocks*number_of_blocks - number_of_bombs:
         game_over_flag = True
         start_counting_flag = False
-        print("AI CASTIGAT")
+        #print("AI CASTIGAT")
         return True
     else:
         return False
@@ -477,16 +495,58 @@ def reset_game():
     global input_number_of_seconds_text
     global input_number_of_seconds_flag
     global lose_flag
+
+    if input_number_of_bombs_text == "not digit" or input_number_of_bombs_text == "max " + str(number_of_blocks**2 - 1):
+        input_number_of_bombs_text = "bombs"
+
+    if input_number_of_blocks_text == "not digit" or input_number_of_blocks_text == "max 30":
+        input_number_of_blocks_text = "blocks"
+
+    if input_number_of_seconds_text == "not digit":
+        input_number_of_seconds_text = "seconds"
+
+    if input_number_of_minutes_text == "not digit":
+        input_number_of_minutes_text = "minutes"
+
     if input_number_of_bombs_text != "bombs":
-        number_of_bombs = int(input_number_of_bombs_text)
+        if input_number_of_bombs_text.isdigit():
+            if int(input_number_of_bombs_text) < number_of_blocks**2:
+                number_of_bombs = int(input_number_of_bombs_text)
+                input_number_of_bombs_text = "bombs"
+            else:
+                input_number_of_bombs_text = "max " + str(number_of_blocks**2 - 1)
+        else:
+            input_number_of_bombs_text = "not digit"
     if input_number_of_blocks_text != "blocks":
-        number_of_blocks = int(input_number_of_blocks_text)
+        if input_number_of_blocks_text.isdigit():
+            if int(input_number_of_blocks_text) < 31:
+                number_of_blocks = int(input_number_of_blocks_text)
+                input_number_of_blocks_text = "blocks"
+            else:
+                number_of_blocks = 30
+                input_number_of_blocks_text = "max 30"
+        else:
+            input_number_of_blocks_text = "not digit"
     if input_number_of_seconds_text != "seconds" or input_number_of_minutes_text != "minutes":
         desired_time_in_seconds = 0
         if input_number_of_seconds_text != "seconds":
-            desired_time_in_seconds += int(input_number_of_seconds_text)
+            if input_number_of_seconds_text.isdigit():
+                if int(input_number_of_seconds_text) < 60:
+                    desired_time_in_seconds += int(input_number_of_seconds_text)
+                    input_number_of_seconds_text = "seconds"
+                else:
+                    input_number_of_seconds_text = "max 59"
+            else:
+                input_number_of_seconds_text = "not digit"
         if input_number_of_minutes_text != "minutes":
-            desired_time_in_seconds += int(input_number_of_minutes_text) * 60
+            if input_number_of_minutes_text.isdigit():
+                if int(input_number_of_minutes_text) < 1441: #a day
+                    desired_time_in_seconds += int(input_number_of_minutes_text) * 60
+                    input_number_of_minutes_text = "minutes"
+                else:
+                    input_number_of_minutes_text = "max 1440"
+            else:
+                input_number_of_minutes_text = "not digit"
     hidden_matrix = []
     visible_matrix = []
     generate_matrix()
@@ -494,37 +554,38 @@ def reset_game():
     game_over_flag = False
     start_time_in_seconds = 0
     start_counting_flag = False
-    input_number_of_blocks_text = "blocks"
     input_number_of_blocks_flag = False
-    input_number_of_minutes_text = "minutes"
     input_number_of_minutes_flag = False
-    input_number_of_bombs_text = "bombs"
     input_number_of_bombs_flag = False
-    input_number_of_seconds_text = "seconds"
     input_number_of_seconds_flag = False
     lose_flag = False
 
-running = True
+def start_game():
+    """
+    Functia incepe jocul
+    """
+    running = True
 
-generate_matrix()
+    generate_matrix()
 
-generate_matrix_game()
+    generate_matrix_game()
 
-while running:
-    # Bucla pana cand butonul de exit este apasat unde jocul este construit
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
-        elif event.type == pygame.MOUSEBUTTONDOWN:
-            process_click(event)
-        elif event.type == pygame.KEYDOWN:
-            process_key(event)
+    while running:
+        # Bucla pana cand butonul de exit este apasat unde jocul este construit
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                process_click(event)
+            elif event.type == pygame.KEYDOWN:
+                process_key(event)
 
-    window.fill((192,192,192))
-    draw_delimiters()
-    drawGrid()
-    drawBoxesInit()
-    draw_control_panel()
-    draw_time()
-    game_over()
-    pygame.display.update()
+        window.fill((192,192,192))
+        draw_delimiters()
+        drawGrid()
+        drawBoxesInit()
+        draw_control_panel()
+        draw_time()
+        game_over()
+        pygame.display.update()
+
